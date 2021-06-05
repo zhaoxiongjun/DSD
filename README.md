@@ -3,7 +3,7 @@ dialogue symptom diagnosis
 
 # Qiuck Start
 
-## 0.2 Requirements
+## 0. Requirements
 
 - python>=3.7
 - torch==1.8.1
