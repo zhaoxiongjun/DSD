@@ -13,7 +13,23 @@ from sklearn.metrics import f1_score
 from transformers import *
 from utils import seed_everything, DialogueDataset, create_mini_batch
 
-# logger = logging.getLogger()
+logger = logging.getLogger()
+
+def init_logging(args):
+    """logging设置和参数信息打印"""
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s | %(message)s", "%Y-%m-%d %H:%M:%S")
+    chlr = logging.StreamHandler()
+    chlr.setFormatter(formatter)
+    logger.addHandler(chlr)
+
+    logger.info("====== parameters setting =======")
+    logger.info("data_dir: " + str(args.data_dir))
+    logger.info("save_dir: " + str(args.save_dir))
+    logger.info("num_epoch: " + str(args.num_epoch))
+    logger.info("batch_size: " + str(args.batch_size))
+    logger.info("random_seed: " + str(args.random_seed))
+    logger.info("evaluate_steps: " + str(args.evaluate_steps))
 
 """加载预训练模型"""
 def build_model():
@@ -28,7 +44,7 @@ def build_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
   
-    print("***** Model Loaded *****")
+    logger.info("***** Model Loaded *****")
     return model, tokenizer
 
 # def save_result(eids, attrs, preds):
@@ -134,10 +150,12 @@ def train(model, trainloader, devloader, args):
                     best_f1 = f1
                     torch.save(model.state_dict(),os.path.join(args.save_dir,'net_params.pth'))
                     # save_result(eids, attrs, preds.cpu())
-                    print("best performer hear. Saving model checkpoint to %s", args.save_dir)
+                    logger.info("best performer hear. Saving model checkpoint to %s", args.save_dir)
                 
-                print('[epoch %d, batch %d] train loss: %.3f, dev f1: %.3f' %
+                logger.info('[epoch %d, batch %d] train loss: %.3f, dev f1: %.3f' %
                     (epoch, batchs, loss.item(), f1))
+                
+                model.train() # 切换回来
 
 if __name__ == "__main__":
 
@@ -147,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_epoch', '-ne', type=int, default=6, help='Total number of training epochs to perform')
     parser.add_argument('--batch_size', '-bs', type=int, default=16, help='Batch size for trainging')
     parser.add_argument('--random_seed', '-rs', type=int, default=66, help='Random seed')
-    parser.add_argument('--evaluate_steps', '-ls', type=int, default=2, help='Evaluate every X updates steps')
+    parser.add_argument('--evaluate_steps', '-ls', type=int, default=200, help='Evaluate every X updates steps')
 
     args = parser.parse_args()
 
@@ -156,7 +174,7 @@ if __name__ == "__main__":
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    # init_logging(args)
+    init_logging(args)
 
     model, tokenizer = build_model()
     trainset = DialogueDataset(os.path.join(args.data_dir,"train.csv"), "train", tokenizer=tokenizer)

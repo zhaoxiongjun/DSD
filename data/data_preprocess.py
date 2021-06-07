@@ -86,7 +86,7 @@ def save_train_data(data, example_ids, mode):
     }
     data=pd.DataFrame(name)
     # print(data.head(1))
-    data_dir = 'data'
+    data_dir = './'
     csv_path = os.path.join(data_dir, mode+'.csv')
     data.to_csv(csv_path, index=False)
 
@@ -160,10 +160,6 @@ if __name__ == "__main__":
 
     train_data = read_train_data('../dataset/train.json')
     example_ids = read_example_ids('../dataset/split.csv')
-
-    data_dir = 'cls_data'
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
  
     save_train_data(
         read_train_data('../dataset/train.json'),
