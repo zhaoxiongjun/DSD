@@ -12,12 +12,13 @@ from transformers import *
 
 from utils import seed_everything, DialogueDataset, create_mini_batch, read_test_data
 
-logger = logging.getLogger()
 
 """加载模型"""
 def build_model(model_dir):
     # 使用中文 BERT
-    PRETRAINED_MODEL_NAME = "bert-base-chinese"
+    # PRETRAINED_MODEL_NAME = "bert-base-chinese"
+    PRETRAINED_MODEL_NAME = 'bert_models/chinese-roberta-wwm-ext-large'
+    
     NUM_LABELS = 3
 
     model = BertForSequenceClassification.from_pretrained(PRETRAINED_MODEL_NAME, num_labels=NUM_LABELS)
@@ -26,7 +27,7 @@ def build_model(model_dir):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     model.eval()
-    logger.info("***** Model Loaded *****")
+    print("***** Model Loaded *****")
     return model
 
 """
@@ -71,14 +72,16 @@ def get_predicts(model, dataloader):
     return eids, attrs, predictions
 
 def predict(args):
-    # logger.info("===============Start Prediction==============")
+   
     print("===============Start Prediction==============")
-    model_version = 'bert-base-chinese'
+    # model_version = 'bert-base-chinese'
+    model_version = 'bert_models/chinese-roberta-wwm-ext-large'
+    
     tokenizer = BertTokenizer.from_pretrained(model_version)
     
     testset = DialogueDataset(read_test_data(args.test_input_file), "test", tokenizer=tokenizer)
     # testset = DialogueDataset("../data/cls_data/dev_test2.csv", "test", tokenizer=tokenizer)
-    testloader = DataLoader(testset, batch_size=8, shuffle=False, collate_fn=create_mini_batch)
+    testloader = DataLoader(testset, batch_size=16, shuffle=False, collate_fn=create_mini_batch)
 
     model = build_model(args.model_dir)
     eids, attrs, predictions = get_predicts(model, testloader)
@@ -88,27 +91,33 @@ def predict(args):
 
     for i in range(len(eids)) :
         outputs[str(eids[i])].append([attrs[i], predictions[i].item()])
-
+    cnt = 0
     for eid, pairs in outputs.items():
         tmp_pred_new = {}
         if len(pairs) != 0:
             for pair in pairs:
-                tmp_pred_new[pair[0]] = str(pair[1])
+                if pair[1] != 3:  # 4分类
+                    tmp_pred_new[pair[0]] = str(pair[1])
+                else:
+                    cnt += 1
         outputs[eid]=tmp_pred_new
 
     # 将那些预测为空的样本id也存入进来，防止输出的样本缺失
-    # for eid in eids:
-    #     if eid not in outputs:
-    #         outputs[eid] = {}
+    with open(args.test_input_file, 'r', encoding='utf-8') as fr:
+        eids_all = json.load(fr)
+    
+    for eid in eids_all.keys():
+        if eid not in outputs:
+            outputs[eid] = {}
 
-    # logger.info("测试样本数量为：", len(outputs))
+  
     print("测试样本数量为：", len(outputs))
+    print("none数量为：", cnt)
     pred_path = os.path.join(args.test_output_file)
 
     with open(pred_path, 'w', encoding='utf-8') as json_file:
         json.dump(outputs, json_file, ensure_ascii=False, indent=4)
-    
-    # logger.info("Prediction Done!")
+   
     print("Prediction Done!")
 
 
@@ -116,9 +125,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', '-dd', type=str, default='data/near_data', help='Train/dev data path')
-    parser.add_argument('--model_dir', '-sd', type=str, default='../net_params.pth', help='Path to save, load model')
-    parser.add_argument('--test_input_file', '-tif', type=str, default='../../dataset/test.json', help='Input file for prediction')
-    parser.add_argument('--test_output_file', '-tof', type=str, default='dev_torch.json', help='Output file for prediction')
+    parser.add_argument('--model_dir', '-sd', type=str, default='./save_model_qe/net_params.pth', help='Path to save, load model')
+    parser.add_argument('--test_input_file', '-tif', type=str, default='./test_attr_pred.json', help='Input file for prediction')
+    parser.add_argument('--test_output_file', '-tof', type=str, default='./evaluate/preds_roberta-xlarge-q_e.json', help='Output file for prediction')
    
     args = parser.parse_args()
 
@@ -127,4 +136,4 @@ if __name__ == "__main__":
     predict(args)
 
    
-    
+# 10033750

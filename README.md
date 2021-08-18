@@ -1,5 +1,5 @@
-# DSD
-dialogue symptom diagnosis
+# MRC-DSD
+A General MRC Framework for Dialogue Symptom Diagnosis
 
 # Qiuck Start
 
@@ -14,8 +14,9 @@ dialogue symptom diagnosis
 
 ## 1. Data Preprocess 
 
-预处理训练数据，将在data文件夹下生成processed文件夹
+The [CMDD](http://www.sdspeople.fudan.edu.cn/zywei/data/emnlp2019-cmdd.zip) dataset released from the paper ["Enhancing Dialogue Symptom Diagnosis with Global Attention and Symptom Graph".](https://www.aclweb.org/anthology/D19-1508.pdf) 
 
+预处理训练数据，将在data文件夹下生成processed文件夹
 ```
 cd data
 python preprocess.py
@@ -35,7 +36,7 @@ python test.py
 将输出预测结果文件，`xxx.json`文件
 
 
-## 4. f1 得分计算
+## 4. P, R and F1 calculate
 
 ```
 python call_f1.py 

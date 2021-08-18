@@ -28,17 +28,22 @@ def init_logging(args):
     logger.info("save_dir: " + str(args.save_dir))
     logger.info("num_epoch: " + str(args.num_epoch))
     logger.info("batch_size: " + str(args.batch_size))
+    logger.info("learning_rate: " + str(args.learning_rate))
     logger.info("random_seed: " + str(args.random_seed))
     logger.info("evaluate_steps: " + str(args.evaluate_steps))
 
 """加载预训练模型"""
 def build_model():
     # 使用中文 BERT
-    PRETRAINED_MODEL_NAME = "bert-base-chinese"
-    NUM_LABELS = 3
+    # model_version = "bert-base-chinese"
+    model_version = "bert_models/chinese-roberta-wwm-ext-large"
+    # NUM_LABELS = 3
+    NUM_LABELS = 4
 
-    tokenizer = BertTokenizer.from_pretrained(PRETRAINED_MODEL_NAME)
-    model = BertForSequenceClassification.from_pretrained(PRETRAINED_MODEL_NAME, num_labels=NUM_LABELS)
+    tokenizer = BertTokenizer.from_pretrained(os.path.join(model_version, "vocab.txt"))
+    # tokenizer = BertTokenizer.from_pretrained(model_version)
+    model = BertForSequenceClassification.from_pretrained(model_version, num_labels=NUM_LABELS)
+   
     
     """获得设备类型"""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -109,11 +114,25 @@ def train(model, trainloader, devloader, args):
     model.train()
 
     # 使用 Adam 优化器
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=3e-5)
+    # optimizer = AdamW(model.parameters(), lr=args.learning_rate, eps=1e-8)
+
+    # 设置optimizer、linear warmup、decay
+    no_decay = ['bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters = [
+        {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            'weight_decay': 0.0},
+        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+    ]
+    optimizer = AdamW(optimizer_grouped_parameters,
+                        betas=(0.9, 0.98),  # according to RoBERTa paper
+                        lr=args.learning_rate,
+                        eps=1e-8)
 
     EPOCHS = args.num_epoch  # 训练轮数
     batchs = 0  # batchs 数
     best_f1 = 0
+    min_loss = 99999.9
 
     for epoch in range(EPOCHS):
         
@@ -146,12 +165,17 @@ def train(model, trainloader, devloader, args):
                 f1 = f1_score(y_trues, preds.cpu(),average='micro')
                 
                 # save model
-                if f1 > best_f1:
+                if f1 >= best_f1:
                     best_f1 = f1
-                    torch.save(model.state_dict(),os.path.join(args.save_dir,'net_params.pth'))
+                    torch.save(model.state_dict(),os.path.join(args.save_dir,'best_params.pth'))
                     # save_result(eids, attrs, preds.cpu())
-                    logger.info("best performer hear. Saving model checkpoint to %s", args.save_dir)
+                    logger.info("best performer here. Saving model checkpoint to %s", args.save_dir)
                 
+                if loss.item() < min_loss:
+                    min_loss = loss.item()
+                    torch.save(model.state_dict(),os.path.join(args.save_dir,'net_params.pth'))
+                    logger.info("min loss here. Saving model checkpoint to %s", args.save_dir)
+
                 logger.info('[epoch %d, batch %d] train loss: %.3f, dev f1: %.3f' %
                     (epoch, batchs, loss.item(), f1))
                 
@@ -160,10 +184,11 @@ def train(model, trainloader, devloader, args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', '-dd', type=str, default='data', help='Train/dev data path')
+    parser.add_argument('--data_dir', '-dd', type=str, default='data/data4', help='Train/dev data path')
     parser.add_argument('--save_dir', '-sd', type=str, default='./save_model', help='Path to save, load model')
-    parser.add_argument('--num_epoch', '-ne', type=int, default=6, help='Total number of training epochs to perform')
-    parser.add_argument('--batch_size', '-bs', type=int, default=16, help='Batch size for trainging')
+    parser.add_argument('--num_epoch', '-ne', type=int, default=5, help='Total number of training epochs to perform')
+    parser.add_argument('--batch_size', '-bs', type=int, default=8, help='Batch size for trainging')
+    parser.add_argument('--learning_rate', '-lr', type=float, default=1e-5, help='learning rate')
     parser.add_argument('--random_seed', '-rs', type=int, default=66, help='Random seed')
     parser.add_argument('--evaluate_steps', '-ls', type=int, default=200, help='Evaluate every X updates steps')
 

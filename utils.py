@@ -30,7 +30,7 @@ def read_test_data(fn):
     seq_ins, seq_attrs, seq_eids, seq_questions = [], [], [], []
     for k, v in data.items():
         eid = k
-        tmp_dialogue = data[eid]['dialogue']
+        tmp_dialogue = data[eid]
         cur_len = 0
         seq_in, seq_attr= [], []
         for i in range(len(tmp_dialogue)):
@@ -52,7 +52,10 @@ def read_test_data(fn):
                     seq_eids.append(eid)
                     seq_ins.append(seq_in)
                     seq_attrs.append(attr)
-                    seq_questions.append("有没有" + attr +"?")
+                    # seq_questions.append(attr)
+                    # seq_questions.append("有没有" + attr +"?")
+                    seq_questions.append("是否患有" + attr +"?")
+                    # seq_questions.append("是否患有" + attr +"症状?")
 
                 seq_in = tmp_sent
                 seq_attr = tmp_attr
@@ -63,7 +66,9 @@ def read_test_data(fn):
             seq_eids.append(eid)
             seq_ins.append(seq_in)
             seq_attrs.append(attr)
-            seq_questions.append("有没有" + attr +"?")
+            # seq_questions.append(attr)
+            seq_questions.append("是否患有" + attr +"?")
+            # seq_questions.append("是否患有" + attr +"症状?")
 
     assert len(seq_eids) == len(seq_ins) == len(seq_attrs) == len(seq_questions)
     # print('句子数量为：', len(seq_ins))
@@ -76,8 +81,8 @@ def read_test_data(fn):
         "attr": seq_attrs
     }
     data=pd.DataFrame(name)
-    data_dir = '../data/cls_data'
-    csv_path = os.path.join(data_dir, 'dev_attr_torch.csv')
+    data_dir = './data'
+    csv_path = os.path.join(data_dir, 'test_attr.csv')
     data.to_csv(csv_path, index=False)
 
     return csv_path
