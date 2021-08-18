@@ -14,7 +14,7 @@ A General MRC Framework for Dialogue Symptom Diagnosis
 
 ## 1. Data Preprocess 
 
-The [CMDD](http://www.sdspeople.fudan.edu.cn/zywei/data/emnlp2019-cmdd.zip) dataset released from the paper ["Enhancing Dialogue Symptom Diagnosis with Global Attention and Symptom Graph".](https://www.aclweb.org/anthology/D19-1508.pdf) 
+The dataset used in this work can be obtained from [CMDD](http://www.sdspeople.fudan.edu.cn/zywei/data/emnlp2019-cmdd.zip)
 
 预处理训练数据，将在data文件夹下生成processed文件夹
 ```
