@@ -1,5 +1,5 @@
-# MRC-DSD
-A General MRC Framework for Dialogue Symptom Diagnosis
+# MRC for DSD
+A Knowledge-aware Machine Reading Comprehension Framework for Dialogue Symptom Diagnosis
 
 # Qiuck Start
 
